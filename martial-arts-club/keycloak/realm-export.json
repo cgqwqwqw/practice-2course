@@ -1,0 +1,73 @@
+{
+  "realm": "martial-arts",
+  "enabled": true,
+  "displayName": "Клуб восточных единоборств",
+  "roles": {
+    "realm": [
+      { "name": "USER", "composite": false, "clientRole": false },
+      { "name": "COACH", "composite": false, "clientRole": false },
+      { "name": "ADMIN", "composite": false, "clientRole": false }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "martial-arts-client",
+      "name": "martial-arts-client",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [ "http://localhost:8080/*" ],
+      "webOrigins": [ "http://localhost:8080" ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "auth-service",
+      "name": "auth-service",
+      "enabled": true,
+      "secret": "auth-service-secret",
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": [],
+      "webOrigins": [],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@club.ru",
+      "firstName": "Администратор",
+      "lastName": "",
+      "credentials": [ { "type": "password", "value": "admin123", "temporary": false } ],
+      "realmRoles": [ "ADMIN" ]
+    },
+    {
+      "username": "coach1",
+      "enabled": true,
+      "email": "coach1@club.ru",
+      "firstName": "Иван",
+      "lastName": "Петров",
+      "credentials": [ { "type": "password", "value": "coach123", "temporary": false } ],
+      "realmRoles": [ "COACH" ]
+    },
+    {
+      "username": "client1",
+      "enabled": true,
+      "email": "client1@club.ru",
+      "firstName": "Сергей",
+      "lastName": "Сидоров",
+      "credentials": [ { "type": "password", "value": "client123", "temporary": false } ],
+      "realmRoles": [ "USER" ]
+    },
+    {
+      "username": "service-account-auth-service",
+      "enabled": true,
+      "serviceAccountClientId": "auth-service",
+      "clientRoles": {
+        "realm-management": [ "manage-users", "view-users" ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+        - id: profile-service
+          uri: http://profile-service:8082
+          predicates:
+            - Path=/api/profiles/**
+        - id: schedule-service
+          uri: http://schedule-service:8083
+          predicates:
+            - Path=/api/schedule/**,/api/bookings/**
+        - id: subscription-service
+          uri: http://subscription-service:8084
+          predicates:
+            - Path=/api/plans/**,/api/subscriptions/**,/api/promo-codes/**,/api/payments/**,/api/admin/**
+        - id: progress-service
+          uri: http://progress-service:8085
+          predicates:
+            - Path=/api/progress/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

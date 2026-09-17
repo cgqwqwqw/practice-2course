@@ -1,0 +1,117 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mac-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.2
+    container_name: mac-keycloak
+    command: start-dev --import-realm --health-enabled=true
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: mac-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  auth-service:
+    build: ./auth-service
+    container_name: mac-auth-service
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_SECRET: auth-service-secret
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/martial-arts
+    ports:
+      - "8081:8081"
+    depends_on:
+      - keycloak
+      - kafka
+
+  profile-service:
+    build: ./profile-service
+    container_name: mac-profile-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - kafka
+
+  schedule-service:
+    build: ./schedule-service
+    container_name: mac-schedule-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - kafka
+
+  subscription-service:
+    build: ./subscription-service
+    container_name: mac-subscription-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - postgres
+      - kafka
+
+  progress-service:
+    build: ./progress-service
+    container_name: mac-progress-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - postgres
+      - kafka
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: mac-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - profile-service
+      - schedule-service
+      - subscription-service
+      - progress-service
+
+  frontend:
+    build:
+      context: ./frontend # Укажите путь к папке фронтенда, если она лежит отдельно (например, ./frontend) или '.'
+      dockerfile: Dockerfile
+    container_name: martial-club-frontend
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+      
+volumes:
+  postgres-data:
